@@ -1,0 +1,17 @@
+{
+  "name": "vyper-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "truffle compile",
+    "test": "truffle test"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@layer2/core": "0.0.41",
+    "ethers": "^4.0.27",
+    "truffle": "^5.0.13"
+  }
+}
