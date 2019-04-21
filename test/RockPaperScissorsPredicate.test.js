@@ -19,13 +19,14 @@ class GamePredicateUtil {
     player1,
     player2,
     commit1,
-    commit2
+    commit2,
+    index
   ) {
     return new StateUpdate(
       segment,
       blkNum,
       predicate,
-      GamePredicateUtil.encode([player1, player2, commit1, commit2])
+      GamePredicateUtil.encode([player1, player2, commit1, commit2, index])
     )
   }
 
@@ -47,7 +48,8 @@ contract("RockPaperScissorsPredicate", (accounts) => {
     account1Address,
     account2Address,
     utils.keccak256(secret1),
-    utils.keccak256(secret2))
+    utils.keccak256(secret2),
+    constants.One)
 
   it("succeed to canInitiateExit", async () => {
     const verifierUtil = await VerifierUtil.new()

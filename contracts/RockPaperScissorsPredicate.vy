@@ -29,27 +29,29 @@ def __init__(_verifierUtil: address):
 
 @public
 @constant
-def decodeState(
+def decodeOwnershipState(
   stateBytes: bytes[256]
-) -> (uint256, uint256):
+) -> (uint256, uint256, address):
   # assert self == extract32(stateBytes, 0, type=address)
   return (
     extract32(stateBytes, 32*1, type=uint256),  # blkNum
-    extract32(stateBytes, 32*2, type=uint256)   # segment
+    extract32(stateBytes, 32*2, type=uint256),  # segment
+    extract32(stateBytes, 32*3, type=address)   # owner
   )
 
 @public
 @constant
 def decodeGameState(
   stateBytes: bytes[256]
-) -> (uint256, uint256, address, address, bytes32, bytes32):
+) -> (uint256, uint256, address, address, bytes32, bytes32, uint256):
   return (
     extract32(stateBytes, 32*1, type=uint256),  # blkNum
     extract32(stateBytes, 32*2, type=uint256),  # segment
     extract32(stateBytes, 32*3, type=address),  # player 1
     extract32(stateBytes, 32*4, type=address),  # player 2
     extract32(stateBytes, 32*5, type=bytes32),  # commit 1
-    extract32(stateBytes, 32*6, type=bytes32)   # commit 2
+    extract32(stateBytes, 32*6, type=bytes32),  # commit 2
+    extract32(stateBytes, 32*7, type=uint256)   # index
   )
 
 @public
@@ -66,7 +68,8 @@ def canInitiateExit(
   player2: address
   commit1: bytes32
   commit2: bytes32
-  (blkNum, segment, player1, player2, commit1, commit2) = self.decodeGameState(_stateUpdate)
+  index: uint256
+  (blkNum, segment, player1, player2, commit1, commit2, index) = self.decodeGameState(_stateUpdate)
   if _owner != ZERO_ADDRESS:
     assert _owner == player1 or _owner == player2
   assert VerifierUtil(self.verifierUtil).isContainSegment(segment, _segment)
@@ -87,13 +90,32 @@ def verifyDeprecation(
   player2: address
   commit1: bytes32
   commit2: bytes32
+  index: uint256
   challengeSegment: uint256
   challengeBlkNum: uint256
-  (blkNum, exitSegment, player1, player2, commit1, commit2) = self.decodeGameState(_stateBytes)
-  (challengeBlkNum, challengeSegment) = self.decodeState(_nextStateUpdate)
+  challengeOwner: address
+  (blkNum, exitSegment, player1, player2, commit1, commit2, index) = self.decodeGameState(_stateBytes)
+  (challengeBlkNum, challengeSegment, challengeOwner) = self.decodeOwnershipState(_nextStateUpdate)
+  secret1: bytes32 = extract32(_transactionWitness, 0, type=bytes32)
+  secret2: bytes32 = extract32(_transactionWitness, 32, type=bytes32)
+  choice1: uint256 = convert(slice(secret1, start=0, len=1), uint256)  
+  choice2: uint256 = convert(slice(secret2, start=0, len=1), uint256)  
+  if choice1 == choice2:
+    if index == 1:
+      assert challengeOwner == player1
+    elif index == 2:
+      assert challengeOwner == player2
+  else:
+    # 0: rock, 1: paper, 2: scissor
+    if (choice1 == 0 and choice2 == 1) or (choice1 == 1 and choice2 == 2) or (choice1 == 2 and choice2 == 0):
+      # player 1 win
+      assert challengeOwner == player1
+    elif (choice1 == 0 and choice2 == 2) or (choice1 == 1 and choice2 == 0) or (choice1 == 2 and choice2 == 1):
+      # player 2 win
+      assert challengeOwner == player2
   assert VerifierUtil(self.verifierUtil).isContainSegment(exitSegment, challengeSegment)
-  assert sha3(extract32(_transactionWitness, 0, type=bytes32)) == commit1
-  assert sha3(extract32(_transactionWitness, 32, type=bytes32)) == commit2
+  assert sha3(secret1) == commit1
+  assert sha3(secret2) == commit2
   return True
 
 @public
@@ -108,7 +130,8 @@ def finalizeExit(
   player2: address
   commit1: bytes32
   commit2: bytes32
+  index: uint256
   tokenId: uint256
   start: uint256
   end: uint256
-  (blkNum, exitSegment, player1, player2, commit1, commit2) = self.decodeGameState(_stateBytes)
+  (blkNum, exitSegment, player1, player2, commit1, commit2, index) = self.decodeGameState(_stateBytes)
