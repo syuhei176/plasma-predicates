@@ -16,6 +16,7 @@ class GamePredicateUtil {
     segment,
     blkNum,
     predicate,
+    id,
     player1,
     player2,
     commit1,
@@ -26,7 +27,7 @@ class GamePredicateUtil {
       segment,
       blkNum,
       predicate,
-      GamePredicateUtil.encode([player1, player2, commit1, commit2, index])
+      GamePredicateUtil.encode([id, player1, player2, commit1, commit2, index])
     )
   }
 
@@ -45,6 +46,7 @@ contract("RockPaperScissorsPredicate", (accounts) => {
     segment,
     utils.bigNumberify(10),
     constants.AddressZero,
+    utils.bigNumberify(1),
     account1Address,
     account2Address,
     utils.keccak256(secret1),
