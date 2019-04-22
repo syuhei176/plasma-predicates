@@ -11,7 +11,7 @@ Examples of [plasma predicate](https://medium.com/plasma-group/plapps-and-predic
 * 2 players commit hash
 * can deprecate state by reveal pre-image.
 
-### The basic form of multisig
+### The minimal framework for predicate
 
 The hint of multisig abstraction for plasma predicates.
 
